@@ -5,6 +5,8 @@
 #include "azoteq_iqs5xx.h"
 #include "pointing_device_internal.h"
 #include "wait.h"
+#include "timer.h"
+#include <stdlib.h>
 
 #ifndef AZOTEQ_IQS5XX_ADDRESS
 #    define AZOTEQ_IQS5XX_ADDRESS (0x74 << 1)
@@ -351,7 +353,7 @@ report_mouse_t azoteq_iqs5xx_get_report(report_mouse_t mouse_report) {
     report_mouse_t temp_report           = {0};
     static uint8_t previous_button_state = 0;
     static uint8_t read_error_count      = 0;
-
+    
     if (azoteq_iqs5xx_init_status == I2C_STATUS_SUCCESS) {
         azoteq_iqs5xx_base_data_t base_data = {0};
 #if !defined(POINTING_DEVICE_MOTION_PIN)
@@ -366,10 +368,21 @@ report_mouse_t azoteq_iqs5xx_get_report(report_mouse_t mouse_report) {
             if (base_data.gesture_events_0.single_tap || base_data.gesture_events_0.press_and_hold) {
                 pd_dprintf("IQS5XX - Single tap/hold.\n");
                 temp_report.buttons = pointing_device_handle_buttons(temp_report.buttons, true, POINTING_DEVICE_BUTTON1);
-            } else if (base_data.gesture_events_1.two_finger_tap) {
+            } 
+#if defined(AZOTEQ_IQS5XX_TPS43) && defined(AZOTEQ_IQS5XX_TWO_FINGER_TAP_THRESHOLD)
+            else if (base_data.gesture_events_1.two_finger_tap) {
+                pd_dprintf("IQS5XX - Two finger tap detected but ignored via config.\n");
+                if (AZOTEQ_IQS5XX_TWO_FINGER_TAP_ENABLE) {
+                    temp_report.buttons = pointing_device_handle_buttons(temp_report.buttons, true, POINTING_DEVICE_BUTTON2);
+                }
+            }
+#else
+            else if (base_data.gesture_events_1.two_finger_tap) {
                 pd_dprintf("IQS5XX - Two finger tap.\n");
                 temp_report.buttons = pointing_device_handle_buttons(temp_report.buttons, true, POINTING_DEVICE_BUTTON2);
-            } else if (base_data.gesture_events_0.swipe_x_neg) {
+            }
+#endif
+            else if (base_data.gesture_events_0.swipe_x_neg) {
                 pd_dprintf("IQS5XX - X-.\n");
                 temp_report.buttons = pointing_device_handle_buttons(temp_report.buttons, true, POINTING_DEVICE_BUTTON4);
                 ignore_movement     = true;

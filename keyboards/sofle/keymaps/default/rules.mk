@@ -1,1 +1,10 @@
 TRI_LAYER_ENABLE = yes
+
+CONVERT_TO=promicro_rp2040
+
+POINTING_DEVICE_ENABLE = yes
+POINTING_DEVICE_DRIVER = azoteq_iqs5xx
+
+# 디버깅 활성화
+# CONSOLE_ENABLE = yes
+# DEBUG_ENABLE = yes

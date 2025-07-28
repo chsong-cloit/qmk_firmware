@@ -1,20 +1,19 @@
-
- /* Copyright 2021 Dane Evans
-  *
-  * This program is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation, either version 2 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-  */
-  // SOFLE RGB
+/* Copyright 2021 Dane Evans
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+// SOFLE RGB
 #include <stdio.h>
 
 #include QMK_KEYBOARD_H
@@ -387,10 +386,32 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 }
 void keyboard_post_init_user(void) {
     // Enable the LED layers
+#ifdef RGBLIGHT_ENABLE
     rgblight_layers = my_rgb_layers;
-
-	rgblight_mode(10);// haven't found a way to set this in a more useful way
-
+    rgblight_mode(10);
+#endif
+    
+    debug_enable = true;
+    debug_matrix = true;
+    dprintf("키보드 초기화 완료! 이 메시지가 보이나요?\n");
+    
+    // I2C 스캔 코드 추가
+    i2c_init();
+    
+    bool found = false;
+    for (uint8_t addr = 1; addr <= 127; addr++) {
+        uint8_t data = 0;
+        if (i2c_readReg(addr, 0, &data, 1, 10) == I2C_STATUS_SUCCESS) {
+            found = true;
+            dprintf("I2C 장치 발견: %d (0x%02X)\n", addr, addr);
+        }
+    }
+    
+    if (!found) {
+        dprintf("I2C 장치를 찾지 못했습니다.\n");
+    }
+    
+    dprintf("I2C 스캔 완료\n");
 }
 #endif
 
